@@ -384,7 +384,6 @@ void FlexArrayTester::testo() {
 		a.insert(2, 80);
 		a.insert(3, 90); // [X X 10 20 80 90]
 		a.insert(3, 99);
-		// return;
 		if (a.get(3) != 99)
 			errorOut_("a get3 wrong: ", a.get(3), 1);
 		if (a.getSize() != 5)

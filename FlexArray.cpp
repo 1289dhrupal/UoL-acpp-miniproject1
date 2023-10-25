@@ -10,7 +10,7 @@ FlexArray::FlexArray() {
 	tailroom_ = capacity_ - headroom_ - size_;
 
 	arr_ = new int[capacity_]();
-	// cout << "c1 " << headroom_  << " "  << tailroom_ << endl; //TODO: remove
+	// cout << "c1 " << headroom_ << " " << tailroom_ << endl; //TODO: remove
 }
 
 FlexArray::FlexArray(const int* arr, int size) {
@@ -23,7 +23,7 @@ FlexArray::FlexArray(const int* arr, int size) {
 	// Center the contents
 	int centerOffset = headroom_;
 	std::memcpy(arr_ + centerOffset, arr, size * sizeof(int)); // Copy inputArr to the centered part
-	// cout << "c2 " << printAll() << endl; //TODO: remove
+	// cout << "c2 " << headroom_ << " " << tailroom_ << endl; //TODO: remove
 }
 
 FlexArray::~FlexArray() {
@@ -188,15 +188,15 @@ bool FlexArray::insert(int i, int v) {
 		if (size_ == 0) {
 			// If empty, insert at center
 			headroom_ = (capacity_ - 1) / 2;
+			tailroom_ = capacity_ - headroom_;
 			arr_[headroom_] = v;
 			size_++;
-			tailroom_ = capacity_ - headroom_ - size_;
 		}
-		else if (i == 0) {
+		else if (i == 0 && headroom_ != 0) {
 			// Inserting at the beginning (push_front equivalent)
 			push_front(v);
 		}
-		else if (i == size_) {
+		else if (i == size_ && tailroom_ != 0) {
 			// Inserting at the end (push_back equivalent)
 			push_back(v);
 		}
@@ -204,16 +204,17 @@ bool FlexArray::insert(int i, int v) {
 
 			// Inserting at a specific position
 			int shift = (i <= size_ / 2) ? -1 : 1;
-			if (shift < 0 && headroom_ > 0) {
+
+			if ((shift < 0 || tailroom_ == 0) && headroom_ > 0) {
 				headroom_--;
 				for (int j = 0; j < i; j++) {
-					arr_[headroom_ + j] = arr_[headroom_ + j - shift];
+					arr_[headroom_ + j] = arr_[headroom_ + j + 1];
 				}
 			}
-			else if (shift > 0 && tailroom_ > 0) {
+			else if ((shift > 0 || headroom_ == 0) && tailroom_ > 0) {
 				tailroom_--;
-				for (int j = i + 1; j < size_ + 1; j++) {
-					arr_[headroom_ + j] = arr_[headroom_ + j - shift];
+				for (int j = size_; j >= i + 1; j--) {
+					arr_[headroom_ + j] = arr_[headroom_ + j - 1];
 				}
 			}
 			else {
@@ -237,8 +238,8 @@ bool FlexArray::erase(int i) {
 		if (size_ == 1) {
 			// If only one element, remove it and reset headroom/tailroom
 			headroom_ = (capacity_ - size_) / 2;
-			size_--;
 			tailroom_ = capacity_ - headroom_ - size_;
+			size_--;
 		}
 		else if (i == 0) {
 			// Erasing the first element (pop_front equivalent)
