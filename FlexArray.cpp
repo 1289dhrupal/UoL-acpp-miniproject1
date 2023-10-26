@@ -1,6 +1,7 @@
 #include "FlexArray.h"
 #include <iostream> // Include necessary header for string operations
 #include <sstream>  // Include header for stringstream
+
 using namespace std;
 
 FlexArray::FlexArray() {
@@ -19,6 +20,7 @@ FlexArray::FlexArray(const int* arr, int size) {
 
 FlexArray::~FlexArray() {
 	delete[] arr_;
+
 	arr_ = nullptr;
 	init_(0, 0);
 }
@@ -107,114 +109,119 @@ bool FlexArray::set(int i, int v) {
 
 void FlexArray::push_back(int v) {
 
+	// If empty, treat it as new array
 	if (size_ == 0) {
 		init_(size_, capacity_);
 	}
 
-	if (tailroom_ > 0) {
-		arr_[headroom_ + size_] = v;
-		tailroom_--;
-		size_++;
-	}
-	else {
+	if (tailroom_ == 0) {
 		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
 		resize_(new_capacity);
-		push_back(v);
 	}
+
+	arr_[headroom_ + size_] = v;
+	tailroom_--;
+	size_++;
+
 }
 
 bool FlexArray::pop_back() {
-	if (size_ > 0) {
-		tailroom_++;
-		size_--;
-		if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-			resize_(new_capacity);
-		}
-
-		return true;
+	if (size_ == 0) {
+		return false;
 	}
 
-	return false;
+	tailroom_++;
+	size_--;
+
+	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+		resize_(new_capacity);
+	}
+
+	return true;
 }
 
 void FlexArray::push_front(int v) {
+
+	// If empty, treat it as new array
 	if (size_ == 0) {
 		init_(-1, capacity_);
 		size_++;
 	}
 
-	if (headroom_ > 0) {
-		headroom_--;
-		arr_[headroom_] = v;
-		size_++;
-	}
-	else {
+	if (headroom_ == 0) {
 		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
 		resize_(new_capacity);
-		push_front(v);
 	}
+
+	headroom_--;
+	arr_[headroom_] = v;
+	size_++;
 }
 
 bool FlexArray::pop_front() {
-	if (size_ > 0) {
-		headroom_++;
-		size_--;
-
-		if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-			resize_(new_capacity);
-		}
-
-		return true;
+	if (size_ == 0) {
+		return false;
 	}
 
-	return false;
+	headroom_++;
+	size_--;
+
+	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+		resize_(new_capacity);
+	}
+
+	return true;
 }
 
 bool FlexArray::insert(int i, int v) {
 
 	if (i >= 0 && i <= size_) {
+
+		if (size_ == capacity_) {
+			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+			resize_(new_capacity);
+		}
+
+		// If empty, insert at center
 		if (size_ == 0) {
-			// If empty, insert at center
 			init_(1, capacity_);
 			arr_[headroom_] = v;
+			return true;
 		}
-		else if (i == 0 && headroom_ != 0) {
-			// Inserting at the beginning (push_front equivalent)
+
+		// Inserting at the beginning (push_front equivalent)
+		if (i == 0 && headroom_ != 0) {
 			push_front(v);
+			return true;
 		}
-		else if (i == size_ && tailroom_ != 0) {
-			// Inserting at the end (push_back equivalent)
+
+		// Inserting at the end (push_back equivalent)
+		if (i == size_ && tailroom_ != 0) {
 			push_back(v);
+			return true;
+		}
+
+		// Inserting at a specific position
+		int shift = (i <= size_ / 2) ? -1 : 1;
+
+		if ((shift < 0 || tailroom_ == 0) && headroom_ > 0) {
+			headroom_--;
+			for (int j = 0; j < i; j++) {
+				arr_[headroom_ + j] = arr_[headroom_ + j + 1];
+			}
 		}
 		else {
-
-			// Inserting at a specific position
-			int shift = (i <= size_ / 2) ? -1 : 1;
-
-			if ((shift < 0 || tailroom_ == 0) && headroom_ > 0) {
-				headroom_--;
-				for (int j = 0; j < i; j++) {
-					arr_[headroom_ + j] = arr_[headroom_ + j + 1];
-				}
+			tailroom_--;
+			for (int j = size_; j >= i + 1; j--) {
+				arr_[headroom_ + j] = arr_[headroom_ + j - 1];
 			}
-			else if ((shift > 0 || headroom_ == 0) && tailroom_ > 0) {
-				tailroom_--;
-				for (int j = size_; j >= i + 1; j--) {
-					arr_[headroom_ + j] = arr_[headroom_ + j - 1];
-				}
-			}
-			else {
-				int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-				resize_(new_capacity);
-				insert(i, v);
-				return true;
-			}
-
-			arr_[headroom_ + i] = v;
-			size_++;
 		}
+
+		arr_[headroom_ + i] = v;
+		size_++;
+
 		return true;
 	}
 	return false;
@@ -222,47 +229,42 @@ bool FlexArray::insert(int i, int v) {
 
 bool FlexArray::erase(int i) {
 	if (i >= 0 && i < size_) {
-		if (size_ == 1) {
-			// If only one element, remove it and reset headroom/tailroom
-			init_(size_, capacity_);
-			size_--;
 
-			if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-				int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-				resize_(new_capacity);
+		// Erasing the first element (pop_front equivalent)
+		if (i == 0) {
+			return pop_front();
+		}
+
+		// Erasing the last element (pop_back equivalent)
+		if (i == size_ - 1) {
+			return pop_back();
+		}
+
+		// If only one element, remove it and reset headroom/tailroom
+		if (size_ == 1) {
+			init_(0, capacity_);
+			return true;
+		}
+
+		int shift = (i < size_ / 2) ? 1 : -1;
+
+		if (shift < 0) {
+			for (int j = i; j < size_; j++) {
+				arr_[headroom_ + j] = arr_[headroom_ + j + 1];
 			}
-		}
-		else if (i == 0) {
-			// Erasing the first element (pop_front equivalent)
-			pop_front();
-		}
-		else if (i == size_ - 1) {
-			// Erasing the last element (pop_back equivalent)
-			pop_back();
+			tailroom_--;
 		}
 		else {
-
-			int shift = (i < size_ / 2) ? 1 : -1;
-
-			if (shift < 0) {
-				for (int j = i; j < size_; j++) {
-					arr_[headroom_ + j] = arr_[headroom_ + j + 1];
-				}
-				tailroom_--;
+			for (int j = i; j > 0; j--) {
+				arr_[headroom_ + j] = arr_[headroom_ + j - 1];
 			}
-			else {
-				for (int j = i; j > 0; j--) {
-					arr_[headroom_ + j] = arr_[headroom_ + j - 1];
-				}
-				headroom_++;
-			}
-			size_--;
+			headroom_++;
+		}
 
-			if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-				int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-				resize_(new_capacity);
-			}
-
+		size_--;
+		if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+			resize_(new_capacity);
 		}
 
 		return true;

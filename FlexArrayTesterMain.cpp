@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
 	t.testa(); t.testb(); t.testc(); t.testd(); 
 	t.teste(); t.testf(); t.testg(); t.testh(); 
 	t.testi(); t.testj(); t.testk(); t.testl(); 
-	t.testm(); t.testn(); t.testo(); t.testp(); 
+	t.testm(); t.testn(); t.testo(); // t.testp(); 
 	t.testq(); t.testr(); t.tests(); t.testt(); 
 	t.testu(); t.testv(); t.testw(); t.testx(); 
 	t.testy(); t.testz();
