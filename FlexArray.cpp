@@ -9,7 +9,7 @@ FlexArray::FlexArray() {
 	arr_ = new int[capacity_]();
 }
 
-FlexArray::FlexArray(const int * arr, int size) {
+FlexArray::FlexArray(const int* arr, int size) {
 	init_(size, LO_THRESHOLD * size);
 	arr_ = new int[capacity_];
 
@@ -25,7 +25,7 @@ FlexArray::~FlexArray() {
 	arr_ = nullptr;
 }
 
-FlexArray::FlexArray(const FlexArray & other) {
+FlexArray::FlexArray(const FlexArray& other) {
 	init_(other.getSize(), other.getCapacity());
 	arr_ = new int[capacity_];
 
@@ -34,8 +34,8 @@ FlexArray::FlexArray(const FlexArray & other) {
 	}
 }
 
-FlexArray & FlexArray::operator = (const FlexArray & other) {
-	if (this == & other) return * this;
+FlexArray& FlexArray::operator=(const FlexArray& other) {
+	if (this == &other) return *this;
 
 	delete[] arr_;
 
@@ -46,7 +46,7 @@ FlexArray & FlexArray::operator = (const FlexArray & other) {
 		arr_[headroom_ + i] = other.get(i);
 	}
 
-	return * this;
+	return *this;
 }
 
 int FlexArray::getSize() const {
@@ -267,7 +267,7 @@ void FlexArray::resize_() {
 
 	int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
 
-	int * new_arr = new int[new_capacity];
+	int* new_arr = new int[new_capacity];
 	int new_headroom = (new_capacity - size_) / 2;
 
 	for (int i = 0; i < size_; i++) {
