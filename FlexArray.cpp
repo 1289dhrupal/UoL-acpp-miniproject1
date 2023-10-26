@@ -1,6 +1,6 @@
 #include "FlexArray.h"
-#include <iostream> // Include necessary header for string operations
-#include <sstream>  // Include header for stringstream
+#include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -9,23 +9,23 @@ FlexArray::FlexArray() {
 	arr_ = new int[capacity_]();
 }
 
-FlexArray::FlexArray(const int* arr, int size) {
+FlexArray::FlexArray(const int * arr, int size) {
 	init_(size, LO_THRESHOLD * size);
 	arr_ = new int[capacity_];
 
-	// Center the contents
-	int centerOffset = headroom_;
-	std::memcpy(arr_ + centerOffset, arr, size * sizeof(int)); // Copy inputArr to the centered part
+	// Center the contents and copy arr to the centered part
+	std::memcpy(arr_ + headroom_, arr, size * sizeof(int));
 }
 
 FlexArray::~FlexArray() {
 	delete[] arr_;
 
-	arr_ = nullptr;
+	// Reset the member variables
 	init_(0, 0);
+	arr_ = nullptr;
 }
 
-FlexArray::FlexArray(const FlexArray& other) {
+FlexArray::FlexArray(const FlexArray & other) {
 	init_(other.getSize(), other.getCapacity());
 	arr_ = new int[capacity_];
 
@@ -34,8 +34,8 @@ FlexArray::FlexArray(const FlexArray& other) {
 	}
 }
 
-FlexArray& FlexArray::operator=(const FlexArray& other) {
-	if (this == &other) return *this;
+FlexArray & FlexArray::operator = (const FlexArray & other) {
+	if (this == & other) return * this;
 
 	delete[] arr_;
 
@@ -46,7 +46,7 @@ FlexArray& FlexArray::operator=(const FlexArray& other) {
 		arr_[headroom_ + i] = other.get(i);
 	}
 
-	return *this;
+	return * this;
 }
 
 int FlexArray::getSize() const {
@@ -76,8 +76,7 @@ string FlexArray::printAll() const {
 	for (int i = 0; i < capacity_; i++) {
 		if (i < headroom_ || i >= headroom_ + size_) {
 			ss << "X";
-		}
-		else {
+		} else {
 			ss << arr_[i];
 		}
 		if (i != capacity_ - 1) {
@@ -115,8 +114,7 @@ void FlexArray::push_back(int v) {
 	}
 
 	if (tailroom_ == 0) {
-		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-		resize_(new_capacity);
+		resize_();
 	}
 
 	arr_[headroom_ + size_] = v;
@@ -134,8 +132,7 @@ bool FlexArray::pop_back() {
 	size_--;
 
 	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-		resize_(new_capacity);
+		resize_();
 	}
 
 	return true;
@@ -150,8 +147,7 @@ void FlexArray::push_front(int v) {
 	}
 
 	if (headroom_ == 0) {
-		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-		resize_(new_capacity);
+		resize_();
 	}
 
 	headroom_--;
@@ -168,8 +164,7 @@ bool FlexArray::pop_front() {
 	size_--;
 
 	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-		resize_(new_capacity);
+		resize_();
 	}
 
 	return true;
@@ -180,8 +175,7 @@ bool FlexArray::insert(int i, int v) {
 	if (i >= 0 && i <= size_) {
 
 		if (size_ == capacity_) {
-			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-			resize_(new_capacity);
+			resize_();
 		}
 
 		// If empty, insert at center
@@ -204,15 +198,14 @@ bool FlexArray::insert(int i, int v) {
 		}
 
 		// Inserting at a specific position
-		int shift = (i <= size_ / 2) ? -1 : 1;
+		int shiftHeadRoom = (i <= (size_ - 1) / 2.0);
 
-		if ((shift < 0 || tailroom_ == 0) && headroom_ > 0) {
+		if ((shiftHeadRoom || tailroom_ == 0) && headroom_ > 0) {
 			headroom_--;
 			for (int j = 0; j < i; j++) {
 				arr_[headroom_ + j] = arr_[headroom_ + j + 1];
 			}
-		}
-		else {
+		} else {
 			tailroom_--;
 			for (int j = size_; j >= i + 1; j--) {
 				arr_[headroom_ + j] = arr_[headroom_ + j - 1];
@@ -246,25 +239,23 @@ bool FlexArray::erase(int i) {
 			return true;
 		}
 
-		int shift = (i < size_ / 2) ? 1 : -1;
+		bool shiftHeadRoom = (i < (size_ - 1) / 2.0);
 
-		if (shift < 0) {
+		if (shiftHeadRoom) {
+			for (int j = i; j > 0; j--) {
+				arr_[headroom_ + j] = arr_[headroom_ + j - 1];
+			}
+			headroom_++;
+		} else {
 			for (int j = i; j < size_; j++) {
 				arr_[headroom_ + j] = arr_[headroom_ + j + 1];
 			}
 			tailroom_--;
 		}
-		else {
-			for (int j = i; j > 0; j--) {
-				arr_[headroom_ + j] = arr_[headroom_ + j - 1];
-			}
-			headroom_++;
-		}
 
 		size_--;
 		if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
-			resize_(new_capacity);
+			resize_();
 		}
 
 		return true;
@@ -272,8 +263,11 @@ bool FlexArray::erase(int i) {
 	return false;
 }
 
-void FlexArray::resize_(int new_capacity) {
-	int* new_arr = new int[new_capacity];
+void FlexArray::resize_() {
+
+	int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+
+	int * new_arr = new int[new_capacity];
 	int new_headroom = (new_capacity - size_) / 2;
 
 	for (int i = 0; i < size_; i++) {
