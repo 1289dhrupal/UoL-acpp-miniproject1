@@ -279,10 +279,9 @@ void FlexArray::resize_(int new_capacity) {
 	}
 
 	delete[] arr_;
+
+	init_(size_, new_capacity);
 	arr_ = new_arr;
-	headroom_ = new_headroom;
-	tailroom_ = new_headroom;
-	capacity_ = new_capacity;
 }
 
 void FlexArray::init_(int size, int capacity) {
