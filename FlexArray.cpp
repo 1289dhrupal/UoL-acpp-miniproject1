@@ -4,21 +4,12 @@
 using namespace std;
 
 FlexArray::FlexArray() {
-	size_ = 0;
-	capacity_ = INITIALCAP;
-
-	headroom_ = (capacity_ - size_) / 2;
-	tailroom_ = capacity_ - headroom_ - size_;
-
+	init_(0, INITIALCAP);
 	arr_ = new int[capacity_]();
 }
 
 FlexArray::FlexArray(const int* arr, int size) {
-	size_ = size;
-	capacity_ = LO_THRESHOLD * size;
-	headroom_ = (capacity_ - size_) / 2;
-	tailroom_ = capacity_ - headroom_ - size_;
-
+	init_(size, LO_THRESHOLD * size);
 	arr_ = new int[capacity_];
 
 	// Center the contents
@@ -29,20 +20,14 @@ FlexArray::FlexArray(const int* arr, int size) {
 FlexArray::~FlexArray() {
 	delete[] arr_;
 	arr_ = nullptr;
-	size_ = 0;
-	capacity_ = 0;
-	headroom_ = 0;
-	tailroom_ = 0;
+	init_(0, 0);
 }
 
 FlexArray::FlexArray(const FlexArray& other) {
-	capacity_ = other.capacity_;
-	size_ = other.size_;
-	headroom_ = other.headroom_;
-	tailroom_ = other.tailroom_;
-
+	init_(other.getSize(), other.getCapacity());
 	arr_ = new int[capacity_];
-;	for (int i = 0; i < size_; i++) {
+
+	for (int i = 0; i < size_; i++) {
 		arr_[headroom_ + i] = other.get(i);
 	}
 }
@@ -52,12 +37,9 @@ FlexArray& FlexArray::operator=(const FlexArray& other) {
 
 	delete[] arr_;
 
-	capacity_ = other.getCapacity();
-	size_ = other.getSize();
-	headroom_ = other.getHeadroom();
-	tailroom_ = other.getTailroom();
-
+	init_(other.getSize(), other.getCapacity());
 	arr_ = new int[capacity_];
+
 	for (int i = 0; i < size_; i++) {
 		arr_[headroom_ + i] = other.get(i);
 	}
@@ -71,14 +53,6 @@ int FlexArray::getSize() const {
 
 int FlexArray::getCapacity() const {
 	return capacity_;
-}
-
-int FlexArray::getHeadroom() const {
-	return headroom_;
-}
-
-int FlexArray::getTailroom() const {
-	return tailroom_;
 }
 
 string FlexArray::print() const {
@@ -127,24 +101,24 @@ bool FlexArray::set(int i, int v) {
 		return true;
 	}
 
+	// TODO: handle the case of an out-of-bounds index differently.
 	return false;
 }
 
 void FlexArray::push_back(int v) {
 
 	if (size_ == 0) {
-		headroom_ = (capacity_) / 2;
-		tailroom_ = capacity_ - headroom_;
+		init_(size_, capacity_);
 	}
-	
+
 	if (tailroom_ > 0) {
 		arr_[headroom_ + size_] = v;
 		tailroom_--;
 		size_++;
 	}
 	else {
-		int new_capacity = 3 * size_; // LO_THRESHOLD = 3
-		resize(new_capacity);
+		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+		resize_(new_capacity);
 		push_back(v);
 	}
 }
@@ -153,9 +127,9 @@ bool FlexArray::pop_back() {
 	if (size_ > 0) {
 		tailroom_++;
 		size_--;
-		if (capacity_ > 7 * size_ && size_ > 0) {
-			int new_capacity = 3 * size_; // LO_THRESHOLD = 3
-			resize(new_capacity);
+		if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+			resize_(new_capacity);
 		}
 
 		return true;
@@ -166,8 +140,8 @@ bool FlexArray::pop_back() {
 
 void FlexArray::push_front(int v) {
 	if (size_ == 0) {
-		headroom_ = (capacity_ / 2) + 1;
-		tailroom_ = capacity_ - headroom_;
+		init_(-1, capacity_);
+		size_++;
 	}
 
 	if (headroom_ > 0) {
@@ -176,8 +150,8 @@ void FlexArray::push_front(int v) {
 		size_++;
 	}
 	else {
-		int new_capacity = 3 * size_; // LO_THRESHOLD = 3
-		resize(new_capacity);
+		int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+		resize_(new_capacity);
 		push_front(v);
 	}
 }
@@ -187,11 +161,11 @@ bool FlexArray::pop_front() {
 		headroom_++;
 		size_--;
 
-		if (capacity_ > 7 * size_ && size_ > 0) {
-			int new_capacity = 3 * size_; // LO_THRESHOLD = 3
-			resize(new_capacity);
+		if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+			int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+			resize_(new_capacity);
 		}
-	
+
 		return true;
 	}
 
@@ -203,9 +177,7 @@ bool FlexArray::insert(int i, int v) {
 	if (i >= 0 && i <= size_) {
 		if (size_ == 0) {
 			// If empty, insert at center
-			size_++;
-			headroom_ = (capacity_ - size_) / 2;
-			tailroom_ = capacity_ - headroom_ - size_;
+			init_(1, capacity_);
 			arr_[headroom_] = v;
 		}
 		else if (i == 0 && headroom_ != 0) {
@@ -219,7 +191,6 @@ bool FlexArray::insert(int i, int v) {
 		else {
 
 			// Inserting at a specific position
-			cout << " h:" << headroom_ << " t:" << tailroom_ << " s:" << size_ << " c:" << capacity_ << " i: " << i << endl;
 			int shift = (i <= size_ / 2) ? -1 : 1;
 
 			if ((shift < 0 || tailroom_ == 0) && headroom_ > 0) {
@@ -235,15 +206,14 @@ bool FlexArray::insert(int i, int v) {
 				}
 			}
 			else {
-				int new_capacity = 3 * size_; // LO_THRESHOLD = 3
-				resize(new_capacity);
+				int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+				resize_(new_capacity);
 				insert(i, v);
 				return true;
 			}
 
 			arr_[headroom_ + i] = v;
 			size_++;
-			// cout << "insert p3" << printAll() << endl; //TODO: remove
 		}
 		return true;
 	}
@@ -254,9 +224,13 @@ bool FlexArray::erase(int i) {
 	if (i >= 0 && i < size_) {
 		if (size_ == 1) {
 			// If only one element, remove it and reset headroom/tailroom
-			headroom_ = (capacity_ - size_) / 2;
-			tailroom_ = capacity_ - headroom_ - size_;
+			init_(size_, capacity_);
 			size_--;
+
+			if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+				int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+				resize_(new_capacity);
+			}
 		}
 		else if (i == 0) {
 			// Erasing the first element (pop_front equivalent)
@@ -283,6 +257,12 @@ bool FlexArray::erase(int i) {
 				headroom_++;
 			}
 			size_--;
+
+			if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+				int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+				resize_(new_capacity);
+			}
+
 		}
 
 		return true;
@@ -290,7 +270,7 @@ bool FlexArray::erase(int i) {
 	return false;
 }
 
-void FlexArray::resize(int new_capacity) {
+void FlexArray::resize_(int new_capacity) {
 	int* new_arr = new int[new_capacity];
 	int new_headroom = (new_capacity - size_) / 2;
 
@@ -303,4 +283,11 @@ void FlexArray::resize(int new_capacity) {
 	headroom_ = new_headroom;
 	tailroom_ = new_headroom;
 	capacity_ = new_capacity;
+}
+
+void FlexArray::init_(int size, int capacity) {
+	size_ = size;
+	capacity_ = capacity;
+	headroom_ = (capacity_ - size_) / 2;
+	tailroom_ = capacity_ - headroom_ - size_;
 }

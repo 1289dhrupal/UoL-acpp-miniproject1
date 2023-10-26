@@ -37,12 +37,6 @@ public:
 	// part of which may not contain the intended elements.
 	int getCapacity() const;
 
-	// Return the number of elements
-	int getHeadroom() const;
-
-	// Return the number of elements
-	int getTailroom() const;
-
 	// Return a string that lists all elements, in order, separated by
 	// a space and a comma, and with square brackets at the beginning
 	// and the end, e.g. "[4, 2, 13, 5, 77]"
@@ -104,7 +98,8 @@ public:
 
 private:
 	// TODO: add your private member data (and possibly functions)
-	void resize(int new_capacity);
+	void resize_(int new_capacity);
+	void init_(int size, int capacity);
 
 	int* arr_; // pointer to internal array
 	int size_;
