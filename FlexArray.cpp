@@ -5,12 +5,12 @@
 using namespace std;
 
 FlexArray::FlexArray() {
-	init_(0, INITIALCAP);
+	set_instance_variables_(0, INITIALCAP);
 	arr_ = new int[capacity_]();
 }
 
 FlexArray::FlexArray(const int* arr, int size) {
-	init_(size, LO_THRESHOLD * size);
+	set_instance_variables_(size, LO_THRESHOLD * size);
 	arr_ = new int[capacity_];
 
 	// Center the contents and copy arr to the centered part
@@ -21,12 +21,12 @@ FlexArray::~FlexArray() {
 	delete[] arr_;
 
 	// Reset the member variables
-	init_(0, 0);
+	set_instance_variables_(0, 0);
 	arr_ = nullptr;
 }
 
 FlexArray::FlexArray(const FlexArray& other) {
-	init_(other.getSize(), other.getCapacity());
+	set_instance_variables_(other.getSize(), other.getCapacity());
 	arr_ = new int[capacity_];
 
 	for (int i = 0; i < size_; i++) {
@@ -39,7 +39,7 @@ FlexArray& FlexArray::operator=(const FlexArray& other) {
 
 	delete[] arr_;
 
-	init_(other.getSize(), other.getCapacity());
+	set_instance_variables_(other.getSize(), other.getCapacity());
 	arr_ = new int[capacity_];
 
 	for (int i = 0; i < size_; i++) {
@@ -110,7 +110,7 @@ void FlexArray::push_back(int v) {
 
 	// If empty, treat it as new array
 	if (size_ == 0) {
-		init_(size_, capacity_);
+		update_head_n_tail_();
 	}
 
 	if (tailroom_ == 0) {
@@ -142,8 +142,9 @@ void FlexArray::push_front(int v) {
 
 	// If empty, treat it as new array
 	if (size_ == 0) {
-		init_(-1, capacity_);
-		size_++;
+		update_head_n_tail_();
+		headroom_++;
+		tailroom_--;
 	}
 
 	if (headroom_ == 0) {
@@ -180,7 +181,9 @@ bool FlexArray::insert(int i, int v) {
 
 		// If empty, insert at center
 		if (size_ == 0) {
-			init_(1, capacity_);
+			update_head_n_tail_();
+			headroom_--;
+			size_++;
 			arr_[headroom_] = v;
 			return true;
 		}
@@ -235,7 +238,8 @@ bool FlexArray::erase(int i) {
 
 		// If only one element, remove it and reset headroom/tailroom
 		if (size_ == 1) {
-			init_(0, capacity_);
+			size_--;
+			update_head_n_tail_();
 			return true;
 		}
 
@@ -276,13 +280,17 @@ void FlexArray::resize_() {
 
 	delete[] arr_;
 
-	init_(size_, new_capacity);
+	set_instance_variables_(size_, new_capacity);
 	arr_ = new_arr;
 }
 
-void FlexArray::init_(int size, int capacity) {
+void FlexArray::set_instance_variables_(int size, int capacity) {
 	size_ = size;
 	capacity_ = capacity;
+	update_head_n_tail_();
+}
+
+void FlexArray::update_head_n_tail_() {
 	headroom_ = (capacity_ - size_) / 2;
 	tailroom_ = capacity_ - headroom_ - size_;
 }

@@ -99,7 +99,8 @@ public:
 private:
 	// TODO: add your private member data (and possibly functions)
 	void resize_();
-	void init_(int size, int capacity);
+	void update_head_n_tail_();
+	void set_instance_variables_(int size, int capacity);
 
 	int* arr_; // pointer to internal array
 	int size_;
