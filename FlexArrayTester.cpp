@@ -417,11 +417,14 @@ void FlexArrayTester::testp() {
 		// insert
 		int arr[]{ 10,20 };
 		FlexArray a{ arr,2 };
+		cout << endl << a.printAll() << endl;
 		a.insert(1, 90);
+		cout << endl << a.printAll() << endl;
 		if (a.get(0) != 10) errorOut_("a get0 wrong: ", a.get(0), 1);
 		if (a.get(1) != 90) errorOut_("a get1 wrong: ", a.get(1), 1);
 		if (a.get(2) != 20) errorOut_("a get2 wrong: ", a.get(2), 1);
 		if (a.getSize() != 3) errorOut_("a size wrong: ", a.getSize(), 1);
+		cout << endl << a.printAll() << endl;
 		string s = a.printAll();
 		if (s != "[X, X, 10, 90, 20, X]")
 			errorOut_("a printall wrong: ", s, 1);
