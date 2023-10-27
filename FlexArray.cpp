@@ -6,7 +6,7 @@ using namespace std;
 
 FlexArray::FlexArray() {
 	set_instance_variables_(0, INITIALCAP);
-	arr_ = new int[capacity_]();
+	arr_ = new int[capacity_];
 }
 
 FlexArray::FlexArray(const int* arr, int size) {
