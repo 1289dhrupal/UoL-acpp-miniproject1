@@ -6,318 +6,322 @@ using namespace std;
 
 // Constructor without parameters
 FlexArray::FlexArray() {
-	set_instance_variables_(0, INITIALCAP);
-	arr_ = new int[capacity_];
+    set_instance_variables_(0, INITIALCAP);
+    arr_ = new int[capacity_];
 }
 
 // Constructor with initial array and size
 FlexArray::FlexArray(const int* arr, int size) {
-	set_instance_variables_(size, LO_THRESHOLD * size);
-	arr_ = new int[capacity_];
+    set_instance_variables_(size, LO_THRESHOLD * size);
+    arr_ = new int[capacity_];
 
-	// Center the contents and copy arr to the centered part
-	std::memcpy(arr_ + headroom_, arr, size * sizeof(int));
+    // Center the contents and copy arr to the centered part
+    std::memcpy(arr_ + headroom_, arr, size * sizeof(int));
 }
 
 // Copy constructor
 FlexArray::FlexArray(const FlexArray& other) {
-	set_instance_variables_(other.getSize(), other.getCapacity());
-	arr_ = new int[capacity_];
+    set_instance_variables_(other.getSize(), other.getCapacity());
+    arr_ = new int[capacity_];
 
-	for (int i = 0; i < size_; ++i) {
-		arr_[headroom_ + i] = other.get(i);
-	}
+    for (int i = 0; i < size_; ++i) {
+        arr_[headroom_ + i] = other.get(i);
+    }
 }
 
 // Copy assignment operator
 FlexArray& FlexArray::operator=(const FlexArray& other) {
-	if (this != &other) {
-		delete[] arr_;
+    if (this != &other) {
+        delete[] arr_;
 
-		set_instance_variables_(other.getSize(), other.getCapacity());
-		arr_ = new int[capacity_];
+        set_instance_variables_(other.getSize(), other.getCapacity());
+        arr_ = new int[capacity_];
 
-		for (int i = 0; i < size_; ++i) {
-			arr_[headroom_ + i] = other.get(i);
-		}
-	}
+        for (int i = 0; i < size_; ++i) {
+            arr_[headroom_ + i] = other.get(i);
+        }
+    }
 
-	return *this;
+    return *this;
 }
 
 // Destructor
 FlexArray::~FlexArray() {
-	delete[] arr_;
+    delete[] arr_;
 
-	// Reset the member variables
-	set_instance_variables_(0, 0);
-	arr_ = nullptr;
+    // Reset the member variables
+    set_instance_variables_(0, 0);
+    arr_ = nullptr;
 }
 
 // Getter for size
 int FlexArray::getSize() const {
-	return size_;
+    return size_;
 }
 
 // Getter for capacity
 int FlexArray::getCapacity() const {
-	return capacity_;
+    return capacity_;
 }
 
 // Getter for element at index i
 int FlexArray::get(int i) const {
-	if (i >= 0 && i < size_) {
-		return arr_[headroom_ + i];
-	}
+    if (i >= 0 && i < size_) {
+        return arr_[headroom_ + i];
+    }
 
-	// TODO: handle the case of an out-of-bounds index differently.
-	return -1;
+    // Returns INT_MIN for out-of-bounds index.
+    return INT_MIN;
 }
 
 // Setter for element at index i
 bool FlexArray::set(int i, int v) {
-	if (i >= 0 && i < size_) {
-		arr_[headroom_ + i] = v;
-		return true;
-	}
+    if (i >= 0 && i < size_) {
+        arr_[headroom_ + i] = v;
+        return true;
+    }
 
-	// TODO: handle the case of an out-of-bounds index differently.
-	return false;
+    // Returns false for an out-of-bounds index.
+    return false;
 }
 
 // Print the array with only non-X elements
 string FlexArray::print() const {
-	std::stringstream ss;
-	ss << "[";
-	for (int i = 0; i < size_; ++i) {
-		ss << arr_[headroom_ + i];
-		if (i != size_ - 1) {
-			ss << ", ";
-		}
-	}
-	ss << "]";
-	return ss.str();
+    return toString(false);
 }
 
 // Print the array with all elements, including X for unused positions
 string FlexArray::printAll() const {
-	std::stringstream ss;
-	ss << "[";
-	for (int i = 0; i < capacity_; ++i) {
-		if (i < headroom_ || i >= headroom_ + size_) {
-			ss << "X";
-		}
-		else {
-			ss << arr_[i];
-		}
-		if (i != capacity_ - 1) {
-			ss << ", ";
-		}
-	}
-	ss << "]";
-	return ss.str();
+    return toString();
 }
 
 // Add an element to the back of the array
 void FlexArray::push_back(int v) {
 
-	// If empty, treat it as a new array
-	if (size_ == 0) {
-		update_head_n_tail_();
-	}
+    // If empty, treat it as a new array
+    if (size_ == 0) {
+        update_head_n_tail_();
+    }
 
-	if (tailroom_ == 0) {
-		resize_();
-	}
+    if (tailroom_ == 0) {
+        resize_();
+    }
 
-	arr_[headroom_ + size_] = v;
-	--tailroom_;
-	++size_;
+    arr_[headroom_ + size_] = v;
+    --tailroom_;
+    ++size_;
 
 }
 
 // Remove an element from the back of the array
 bool FlexArray::pop_back() {
-	if (size_ == 0) {
-		return false;
-	}
+    if (size_ == 0) {
+        return false;
+    }
 
-	++tailroom_;
-	--size_;
+    ++tailroom_;
+    --size_;
 
-	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-		resize_();
-	}
+    if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+        resize_();
+    }
 
-	return true;
+    return true;
 }
 
 // Add an element to the front of the array
 void FlexArray::push_front(int v) {
 
-	// If empty, treat it as a new array
-	if (size_ == 0) {
-		update_head_n_tail_();
+    // If empty, treat it as a new array
+    if (size_ == 0) {
+        update_head_n_tail_();
 
-		// Adjustments needed as its treated as new array
-		++headroom_;
-		--tailroom_;
-	}
+        // Adjustments needed as its treated as new array
+        ++headroom_;
+        --tailroom_;
+    }
 
-	if (headroom_ == 0) {
-		resize_();
-	}
+    if (headroom_ == 0) {
+        resize_();
+    }
 
-	--headroom_;
-	arr_[headroom_] = v;
-	++size_;
+    --headroom_;
+    arr_[headroom_] = v;
+    ++size_;
 }
 
 // Remove an element from the front of the array
 bool FlexArray::pop_front() {
-	if (size_ == 0) {
-		return false;
-	}
+    if (size_ == 0) {
+        return false;
+    }
 
-	++headroom_;
-	--size_;
+    ++headroom_;
+    --size_;
 
-	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-		resize_();
-	}
+    if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+        resize_();
+    }
 
-	return true;
+    return true;
 }
 
 // Insert an element at a specific index in the array
 bool FlexArray::insert(int i, int v) {
 
-	// Insert at out-of-bounds index
-	if (i < 0 || i > size_) {
-		return false;
-	}
+    // Insert at out-of-bounds index
+    if (i < 0 || i > size_) {
+        return false;
+    }
 
-	// If there is no room to insert, resize
-	if (size_ == capacity_) {
-		resize_();
-	}
+    // If there is no room to insert, resize
+    if (size_ == capacity_) {
+        resize_();
+    }
 
-	// If empty, insert at the center
-	if (size_ == 0) {
-		update_head_n_tail_();
-		--headroom_;
-		++size_;
-		arr_[headroom_] = v;
-		return true;
-	}
+    // If empty, insert at the center
+    if (size_ == 0) {
+        update_head_n_tail_();
+        --headroom_;
+        ++size_;
+        arr_[headroom_] = v;
+        return true;
+    }
 
-	// Inserting at the beginning (push_front equivalent)
-	if (i == 0 && headroom_ != 0) {
-		push_front(v);
-		return true;
-	}
+    // Inserting at the beginning (push_front equivalent)
+    if (i == 0 && headroom_ != 0) {
+        push_front(v);
+        return true;
+    }
 
-	// Inserting at the end (push_back equivalent)
-	if (i == size_ && tailroom_ != 0) {
-		push_back(v);
-		return true;
-	}
+    // Inserting at the end (push_back equivalent)
+    if (i == size_ && tailroom_ != 0) {
+        push_back(v);
+        return true;
+    }
 
-	// Check and shift array in required direction
-	if ((i <= (size_ - 1) / 2.0 || tailroom_ == 0) && headroom_ > 0) {
-		// if theres sufficient headroom and is supposed to be shifted right
-		// or if there is no space in the tailroom
-		--headroom_;
-		for (int j = 0; j < i; ++j) {
-			arr_[headroom_ + j] = arr_[headroom_ + j + 1];
-		}
-	}
-	else {
-		--tailroom_;
-		for (int j = size_; j >= i + 1; --j) {
-			arr_[headroom_ + j] = arr_[headroom_ + j - 1];
-		}
-	}
+    // Check and shift array in required direction
+    if ((i < size_ / 2.0 || tailroom_ == 0) && headroom_ > 0) {
+        // if theres sufficient headroom and is supposed to be shifted right
+        // or if there is no space in the tailroom
+        --headroom_;
+        for (int j = 0; j < i; ++j) {
+            arr_[headroom_ + j] = arr_[headroom_ + j + 1];
+        }
+    }
+    else {
+        --tailroom_;
+        for (int j = size_; j >= i + 1; --j) {
+            arr_[headroom_ + j] = arr_[headroom_ + j - 1];
+        }
+    }
 
-	arr_[headroom_ + i] = v;
-	++size_;
+    arr_[headroom_ + i] = v;
+    ++size_;
 
-	return true;
+    return true;
 }
 
 // Remove an element at a specific index from the array
 bool FlexArray::erase(int i) {
-	// Erasing the out-of-bounds index
-	if (i < 0 || i >= size_) {
-		return false;
-	}
+    // Erasing the out-of-bounds index
+    if (i < 0 || i >= size_) {
+        return false;
+    }
 
-	// Erasing the first element (pop_front equivalent)
-	if (i == 0) {
-		return pop_front();
-	}
+    // Erasing the first element (pop_front equivalent)
+    if (i == 0) {
+        return pop_front();
+    }
 
-	// Erasing the last element (pop_back equivalent)
-	if (i == size_ - 1) {
-		return pop_back();
-	}
+    // Erasing the last element (pop_back equivalent)
+    if (i == size_ - 1) {
+        return pop_back();
+    }
 
-	// If only one element, remove it and reset headroom/tailroom
-	if (size_ == 1) {
-		--size_;
-		update_head_n_tail_();
-		return true;
-	}
+    // If only one element, remove it and reset headroom/tailroom
+    if (size_ == 1) {
+        --size_;
+        update_head_n_tail_();
+        return true;
+    }
 
-	// Check and shift array in required direction
-	if (i < (size_ - 1) / 2.0) {
-		for (int j = i; j > 0; --j) {
-			arr_[headroom_ + j] = arr_[headroom_ + j - 1];
-		}
-		++headroom_;
-	}
-	else {
-		for (int j = i; j < size_; ++j) {
-			arr_[headroom_ + j] = arr_[headroom_ + j + 1];
-		}
-		--tailroom_;
-	}
+    // Check and shift array in required direction
+    if (i < (size_ - 1) / 2.0) {
+        for (int j = i; j > 0; --j) {
+            arr_[headroom_ + j] = arr_[headroom_ + j - 1];
+        }
+        ++headroom_;
+    }
+    else {
+        for (int j = i; j < size_; ++j) {
+            arr_[headroom_ + j] = arr_[headroom_ + j + 1];
+        }
+        --tailroom_;
+    }
 
-	--size_;
-	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-		resize_();
-	}
+    --size_;
+    if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+        resize_();
+    }
 
-	return true;
+    return true;
 }
 
 // Resize the array to a new capacity
 void FlexArray::resize_() {
 
-	int new_capacity = LO_THRESHOLD * size_;
+    int new_capacity = LO_THRESHOLD * size_;
 
-	int* new_arr = new int[new_capacity];
-	int new_headroom = (new_capacity - size_) / 2;
+    int* new_arr = new int[new_capacity];
+    int new_headroom = (new_capacity - size_) / 2;
 
-	for (int i = 0; i < size_; ++i) {
-		new_arr[new_headroom + i] = arr_[headroom_ + i];
-	}
+    for (int i = 0; i < size_; ++i) {
+        new_arr[new_headroom + i] = arr_[headroom_ + i];
+    }
 
-	delete[] arr_;
+    delete[] arr_;
 
-	set_instance_variables_(size_, new_capacity);
-	arr_ = new_arr;
+    set_instance_variables_(size_, new_capacity);
+    arr_ = new_arr;
 }
 
 // Helper function to set instance variables
 void FlexArray::set_instance_variables_(int size, int capacity) {
-	size_ = size;
-	capacity_ = capacity;
-	update_head_n_tail_();
+    size_ = size;
+    capacity_ = capacity;
+    update_head_n_tail_();
 }
 
 // Helper function to update headroom and tailroom
 void FlexArray::update_head_n_tail_() {
-	headroom_ = (capacity_ - size_) / 2;
-	tailroom_ = capacity_ - headroom_ - size_;
+    headroom_ = (capacity_ - size_) / 2;
+    tailroom_ = capacity_ - headroom_ - size_;
 }
+
+// Converts array to string reprentation
+string FlexArray::toString(bool printAll) const {
+    int start = headroom_;
+    int end = headroom_ + size_;
+    if (printAll) {
+        start = 0;
+        end = capacity_;
+    }
+
+    std::stringstream ss;
+    ss << "[";
+    for (int i = start; i < end; ++i) {
+        if (i < headroom_ || i >= headroom_ + size_) {
+            ss << "X";
+        }
+        else {
+            ss << arr_[i];
+        }
+        if (i != end - 1) {
+            ss << ", ";
+        }
+    }
+    ss << "]";
+    return ss.str();
+}
+

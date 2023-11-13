@@ -97,14 +97,23 @@ public:
 	static constexpr int HI_THRESHOLD = 7;
 
 private:
-	// TODO: add your private member data (and possibly functions)
+	// Resize the array when array size hits capacity
+	// or when the array is shrinked to LO_THRESHOLD
 	void resize_();
+
+	// Recalculate the value for headroom and tailroom
 	void update_head_n_tail_();
+
+	// Updates/Sets the instance variables
 	void set_instance_variables_(int size, int capacity);
 
+	// To return array as string depending upon the parameter decides 
+	// whether to return whole array or not
+	string toString(bool printAll = true) const;
+
 	int* arr_; // pointer to internal array
-	int size_;
-	int capacity_;
-	int headroom_;
-	int tailroom_;
+	int size_; // size of the internal array
+	int capacity_; // total capacity of the array
+	int headroom_; // empty space at start of the array
+	int tailroom_; // empty space at end of the array
 };
