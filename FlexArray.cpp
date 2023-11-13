@@ -31,15 +31,15 @@ FlexArray::FlexArray(const FlexArray& other) {
 
 // Copy assignment operator
 FlexArray& FlexArray::operator=(const FlexArray& other) {
-	if (this == &other) return *this;
+	if (this != &other) {
+		delete[] arr_;
 
-	delete[] arr_;
+		set_instance_variables_(other.getSize(), other.getCapacity());
+		arr_ = new int[capacity_];
 
-	set_instance_variables_(other.getSize(), other.getCapacity());
-	arr_ = new int[capacity_];
-
-	for (int i = 0; i < size_; ++i) {
-		arr_[headroom_ + i] = other.get(i);
+		for (int i = 0; i < size_; ++i) {
+			arr_[headroom_ + i] = other.get(i);
+		}
 	}
 
 	return *this;
@@ -158,6 +158,8 @@ void FlexArray::push_front(int v) {
 	// If empty, treat it as a new array
 	if (size_ == 0) {
 		update_head_n_tail_();
+
+		// Adjustments needed as its treated as new array
 		++headroom_;
 		--tailroom_;
 	}
@@ -190,107 +192,109 @@ bool FlexArray::pop_front() {
 // Insert an element at a specific index in the array
 bool FlexArray::insert(int i, int v) {
 
-	if (i >= 0 && i <= size_) {
+	// Insert at out-of-bounds index
+	if (i < 0 || i > size_) {
+		return false;
+	}
 
-		if (size_ == capacity_) {
-			resize_();
-		}
+	// If there is no room to insert, resize
+	if (size_ == capacity_) {
+		resize_();
+	}
 
-		// If empty, insert at the center
-		if (size_ == 0) {
-			update_head_n_tail_();
-			--headroom_;
-			++size_;
-			arr_[headroom_] = v;
-			return true;
-		}
-
-		// Inserting at the beginning (push_front equivalent)
-		if (i == 0 && headroom_ != 0) {
-			push_front(v);
-			return true;
-		}
-
-		// Inserting at the end (push_back equivalent)
-		if (i == size_ && tailroom_ != 0) {
-			push_back(v);
-			return true;
-		}
-
-		// Inserting at a specific position
-		bool shiftHeadRoom = (i <= (size_ - 1) / 2.0);
-
-		if ((shiftHeadRoom || tailroom_ == 0) && headroom_ > 0) {
-			--headroom_;
-			for (int j = 0; j < i; ++j) {
-				arr_[headroom_ + j] = arr_[headroom_ + j + 1];
-			}
-		}
-		else {
-			--tailroom_;
-			for (int j = size_; j >= i + 1; --j) {
-				arr_[headroom_ + j] = arr_[headroom_ + j - 1];
-			}
-		}
-
-		arr_[headroom_ + i] = v;
+	// If empty, insert at the center
+	if (size_ == 0) {
+		update_head_n_tail_();
+		--headroom_;
 		++size_;
-
+		arr_[headroom_] = v;
 		return true;
 	}
-	return false;
+
+	// Inserting at the beginning (push_front equivalent)
+	if (i == 0 && headroom_ != 0) {
+		push_front(v);
+		return true;
+	}
+
+	// Inserting at the end (push_back equivalent)
+	if (i == size_ && tailroom_ != 0) {
+		push_back(v);
+		return true;
+	}
+
+	// Check and shift array in required direction
+	if ((i <= (size_ - 1) / 2.0 || tailroom_ == 0) && headroom_ > 0) {
+		// if theres sufficient headroom and is supposed to be shifted right
+		// or if there is no space in the tailroom
+		--headroom_;
+		for (int j = 0; j < i; ++j) {
+			arr_[headroom_ + j] = arr_[headroom_ + j + 1];
+		}
+	}
+	else {
+		--tailroom_;
+		for (int j = size_; j >= i + 1; --j) {
+			arr_[headroom_ + j] = arr_[headroom_ + j - 1];
+		}
+	}
+
+	arr_[headroom_ + i] = v;
+	++size_;
+
+	return true;
 }
 
 // Remove an element at a specific index from the array
 bool FlexArray::erase(int i) {
-	if (i >= 0 && i < size_) {
+	// Erasing the out-of-bounds index
+	if (i < 0 || i >= size_) {
+		return false;
+	}
 
-		// Erasing the first element (pop_front equivalent)
-		if (i == 0) {
-			return pop_front();
-		}
+	// Erasing the first element (pop_front equivalent)
+	if (i == 0) {
+		return pop_front();
+	}
 
-		// Erasing the last element (pop_back equivalent)
-		if (i == size_ - 1) {
-			return pop_back();
-		}
+	// Erasing the last element (pop_back equivalent)
+	if (i == size_ - 1) {
+		return pop_back();
+	}
 
-		// If only one element, remove it and reset headroom/tailroom
-		if (size_ == 1) {
-			--size_;
-			update_head_n_tail_();
-			return true;
-		}
-
-		bool shiftHeadRoom = (i < (size_ - 1) / 2.0);
-
-		if (shiftHeadRoom) {
-			for (int j = i; j > 0; --j) {
-				arr_[headroom_ + j] = arr_[headroom_ + j - 1];
-			}
-			++headroom_;
-		}
-		else {
-			for (int j = i; j < size_; ++j) {
-				arr_[headroom_ + j] = arr_[headroom_ + j + 1];
-			}
-			--tailroom_;
-		}
-
+	// If only one element, remove it and reset headroom/tailroom
+	if (size_ == 1) {
 		--size_;
-		if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
-			resize_();
-		}
-
+		update_head_n_tail_();
 		return true;
 	}
-	return false;
+
+	// Check and shift array in required direction
+	if (i < (size_ - 1) / 2.0) {
+		for (int j = i; j > 0; --j) {
+			arr_[headroom_ + j] = arr_[headroom_ + j - 1];
+		}
+		++headroom_;
+	}
+	else {
+		for (int j = i; j < size_; ++j) {
+			arr_[headroom_ + j] = arr_[headroom_ + j + 1];
+		}
+		--tailroom_;
+	}
+
+	--size_;
+	if (capacity_ > HI_THRESHOLD * size_ && size_ > 0) {
+		resize_();
+	}
+
+	return true;
 }
 
 // Resize the array to a new capacity
 void FlexArray::resize_() {
 
-	int new_capacity = LO_THRESHOLD * size_; // LO_THRESHOLD = 3
+	int new_capacity = LO_THRESHOLD * size_;
 
 	int* new_arr = new int[new_capacity];
 	int new_headroom = (new_capacity - size_) / 2;
